@@ -571,7 +571,7 @@ number position, column number position and file path."
   (anaconda-mode-call
    "goto_definitions"
    (lambda (result)
-     (anaconda-mode-show-xrefs result nil "No definitions found"))))
+     (anaconda-mode-show-defs result nil "No definitions found"))))
 
 (defun anaconda-mode-find-definitions-other-window ()
   "Find definitions for thing at point."
@@ -579,7 +579,7 @@ number position, column number position and file path."
   (anaconda-mode-call
    "goto_definitions"
    (lambda (result)
-     (anaconda-mode-show-xrefs result 'window "No definitions found"))))
+     (anaconda-mode-show-defs result 'window "No definitions found"))))
 
 (defun anaconda-mode-find-definitions-other-frame ()
   "Find definitions for thing at point."
@@ -587,7 +587,7 @@ number position, column number position and file path."
   (anaconda-mode-call
    "goto_definitions"
    (lambda (result)
-     (anaconda-mode-show-xrefs result 'frame "No definitions found"))))
+     (anaconda-mode-show-defs result 'frame "No definitions found"))))
 
 
 ;;; Find assignments.
@@ -646,13 +646,32 @@ number position, column number position and file path."
 
 ;;; Xref.
 
+(defun anaconda-mode-show-defs (result display-action error-message)
+  "Show xref from RESULT using DISPLAY-ACTION.
+Show ERROR-MESSAGE if result is empty."
+  (if result
+      (if (stringp result)
+          (message result)
+        (let ((xrefs (anaconda-mode-make-xrefs result)))
+          ;; Emacs 27 expects a function that returns a list of xrefs
+          (xref--show-defs (if (functionp 'xref--create-fetcher)
+                               (-const xrefs)
+                             xrefs)
+                           display-action)))
+    (message error-message)))
+
 (defun anaconda-mode-show-xrefs (result display-action error-message)
   "Show xref from RESULT using DISPLAY-ACTION.
 Show ERROR-MESSAGE if result is empty."
   (if result
       (if (stringp result)
           (message result)
-        (xref--show-xrefs (anaconda-mode-make-xrefs result) display-action))
+        (let ((xrefs (anaconda-mode-make-xrefs result)))
+          ;; Emacs 27 expects a function that returns a list of xrefs
+          (xref--show-xrefs (if (functionp 'xref--create-fetcher)
+                                (-const xrefs)
+                              xrefs)
+                            display-action)))
     (message error-message)))
 
 (defun anaconda-mode-make-xrefs (result)
